@@ -15,9 +15,9 @@ chrome.runtime.onInstalled.addListener(function () {
     title: "Format Selected",
     contexts: ["selection"],
   });
+
 });
 
-// Background
 function ensureSendMessage(tabId, message, callback) {
   chrome.tabs.sendMessage(tabId, { ping: true }, function (response) {
     if (response && response.pong) {

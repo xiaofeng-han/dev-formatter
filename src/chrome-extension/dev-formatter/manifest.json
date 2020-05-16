@@ -5,7 +5,22 @@
   "manifest_version": 2,
   "permissions": ["contextMenus", "tabs", "activeTab", "<all_urls>"],
   "background": {
-    "scripts": ["background/menu.js"],
+    "scripts": ["jquery/jquery.min.js", "background/menu.js"],
     "persistent": false
-  }
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "css": [
+        "jquery/jquery-ui.min.css",
+        "jquery/jquery-ui.theme.min.css",
+        "jquery/jquery-ui.structure.min.css"
+      ],
+      "js": [
+        "jquery/jquery.min.js",
+        "jquery/jquery-ui.min.js",
+        "foreground/bubble.js"
+      ]
+    }
+  ]
 }

@@ -7,36 +7,22 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 
   var selection = window.getSelection().toString();
   console.log("Current selected", selection);
+  var dialog = $("#__dev_formatter_bubble__");
+  dialog.text("Selected: " + selection);
+  dialog.dialog({
+    autoOpen: false,
+    closeText: "close",
+  });
+  dialog.dialog("open");
+  dialog.dialog("moveToTop");
   sendResponse("Detected selection " + selection);
   /* Content script action */
 });
 var bubbleDOM = document.createElement("div");
-bubbleDOM.setAttribute("class", "selection_bubble");
+bubbleDOM.setAttribute("title", "Formatted String");
+bubbleDOM.id = "__dev_formatter_bubble__";
 document.body.appendChild(bubbleDOM);
 
-// // Lets listen to mouseup DOM events.
-// document.addEventListener(
-//   "mouseup",
-//   function (e) {
-//     var selection = window.getSelection().toString();
-//     console.log("mouse up detected");
-//     console.log("selection", selection);
-//     if (selection.length > 0) {
-//       renderBubble(e.clientX, e.clientY, selection);
-//     }
-//   },
-//   false
-// );
-
-// // Close the bubble when we click on the screen.
-// document.addEventListener(
-//   "mousedown",
-//   function (e) {
-//     bubbleDOM.style.visibility = "hidden";
-//     console.log("mouse down detected");
-//   },
-//   false
-// );
 
 // Move that bubble to the appropriate location.
 function renderBubble(mouseX, mouseY, selection) {
