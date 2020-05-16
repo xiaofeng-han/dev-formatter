@@ -3,18 +3,9 @@
   "version": "1.0",
   "description": "A formatter for dev",
   "manifest_version": 2,
-  "permissions": ["contextMenus"],
+  "permissions": ["contextMenus", "tabs", "activeTab", "<all_urls>"],
   "background": {
     "scripts": ["background/menu.js"],
     "persistent": false
-  },
-  "content_scripts": [
-    {
-      "matches": ["http://*/*", "https://*/*"],
-      "css": ["foreground/bubble.css"],
-      "js": ["foreground/bubble.js"],
-      "run_at": "document_end",
-      "all_frames": true
-    }
-  ]
+  }
 }
