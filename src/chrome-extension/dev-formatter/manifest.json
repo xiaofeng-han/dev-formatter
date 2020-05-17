@@ -8,14 +8,14 @@
     "scripts": ["jquery/jquery.min.js", "background/menu.js"],
     "persistent": false
   },
-  web_accessible_resources": [
+  "web_accessible_resources": [
     "jquery/images/*"
   ],
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
       "css": [
-        "jquery/jquery-ui.min.css",
+        "jquery/jquery-ui.css",
         "jquery/jquery-ui.theme.min.css",
         "jquery/jquery-ui.structure.min.css"
       ],
