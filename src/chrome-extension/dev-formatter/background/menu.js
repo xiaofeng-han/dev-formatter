@@ -27,7 +27,7 @@ function ensureSendMessage(tabId, message, callback) {
       // No listener on the other end
       chrome.tabs.executeScript(
         tabId,
-        { file: "foreground/bubble.js" },
+        { file: "foreground/formatter.js" },
         function () {
           if (chrome.runtime.lastError) {
             console.error(chrome.runtime.lastError);

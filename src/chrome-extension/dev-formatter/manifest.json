@@ -22,7 +22,7 @@
       "js": [
         "jquery/jquery.min.js",
         "jquery/jquery-ui.min.js",
-        "foreground/bubble.js"
+        "foreground/formatter.js"
       ]
     }
   ]
