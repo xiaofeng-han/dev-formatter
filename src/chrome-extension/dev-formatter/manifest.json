@@ -16,8 +16,8 @@
       "matches": ["<all_urls>"],
       "css": [
         "jquery/jquery-ui.css",
-        "jquery/jquery-ui.theme.min.css",
-        "jquery/jquery-ui.structure.min.css"
+        "jquery/jquery-ui.theme.css",
+        "jquery/jquery-ui.structure.css"
       ],
       "js": [
         "jquery/jquery.min.js",
