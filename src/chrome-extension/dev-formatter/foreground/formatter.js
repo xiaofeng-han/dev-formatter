@@ -10,7 +10,8 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 
   var selection = window.getSelection().toString();
   var dialog = $(bubbleDOM);
-  dialog.html(format(selection));
+  var formatted = format(selection);
+  dialog.html(formatted);
   dialog.dialog({
     autoOpen: false,
     closeText: "close",
@@ -18,6 +19,15 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     maxWidth: $(window).width() * 0.8,
     maxHeight: $(window).height() * 0.8,
     modal: true,
+    buttons: [
+      {
+        text: "Copy & Close",
+        click: () => {
+          navigator.clipboard.writeText(formatForClipboard(formatted));
+          dialog.dialog("close");
+        }
+      }
+    ]
   });
   dialog.dialog("open");
   dialog.dialog("moveToTop");
@@ -76,3 +86,9 @@ const format = (selection) => {
   });
   return result.join("");
 };
+
+const formatForClipboard = (formatted) => {
+  var forClipboard = formatted.replace(/\&nbsp;/g, " ");
+  forClipboard = forClipboard.replace(/<br\/>/g, "\n");
+  return forClipboard;
+}
