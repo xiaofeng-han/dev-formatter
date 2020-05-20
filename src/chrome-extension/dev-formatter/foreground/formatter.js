@@ -8,9 +8,19 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     return;
   }
 
+  if (
+    typeof request.previous_formatted === undefined ||
+    request.previous_formatted === undefined
+  ) {
+    console.log("no previous formatted content");
+  } else {
+    console.log("previous formatted content", request.previous_formatted);
+  }
+
   var selection = window.getSelection().toString();
   var dialog = $(bubbleDOM);
   var formatted = format(selection);
+  var formattedForClipboard = formatForClipboard(formatted);
   dialog.html(formatted);
   dialog.dialog({
     autoOpen: false,
@@ -23,15 +33,15 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
       {
         text: "Copy & Close",
         click: () => {
-          navigator.clipboard.writeText(formatForClipboard(formatted));
+          navigator.clipboard.writeText(formatted);
           dialog.dialog("close");
-        }
-      }
-    ]
+        },
+      },
+    ],
   });
   dialog.dialog("open");
   dialog.dialog("moveToTop");
-  sendResponse("Detected selection " + selection);
+  sendResponse(formattedForClipboard);
   /* Content script action */
 });
 
@@ -91,4 +101,4 @@ const formatForClipboard = (formatted) => {
   var forClipboard = formatted.replace(/\&nbsp;/g, " ");
   forClipboard = forClipboard.replace(/<br\/>/g, "\n");
   return forClipboard;
-}
+};

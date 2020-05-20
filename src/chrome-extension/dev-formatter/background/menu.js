@@ -1,9 +1,13 @@
+var previous_formatted;
 function onClickHandler(info, tab) {
   console.log("item " + info.menuItemId + " was clicked");
   console.log("info: " + JSON.stringify(info));
   console.log("tab: " + JSON.stringify(tab));
-  ensureSendMessage(tab.id, "format_selected", (response) => {
-    console.log("message response", response);
+  ensureSendMessage(tab.id, {
+    "previous_formatted": previous_formatted
+  }, (response) => {
+    previous_formatted = response;
+    console.log("previous formatted", response);
   });
 }
 
@@ -15,7 +19,6 @@ chrome.runtime.onInstalled.addListener(function () {
     title: "Format Selected",
     contexts: ["selection"],
   });
-
 });
 
 function ensureSendMessage(tabId, message, callback) {
