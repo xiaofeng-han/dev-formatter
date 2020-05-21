@@ -33,7 +33,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
       {
         text: "Copy & Close",
         click: () => {
-          navigator.clipboard.writeText(formatted);
+          navigator.clipboard.writeText(formattedForClipboard);
           dialog.dialog("close");
         },
       },
