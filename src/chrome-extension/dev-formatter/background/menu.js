@@ -3,12 +3,28 @@ function onClickHandler(info, tab) {
   console.log("item " + info.menuItemId + " was clicked");
   console.log("info: " + JSON.stringify(info));
   console.log("tab: " + JSON.stringify(tab));
-  ensureSendMessage(tab.id, {
-    "previous_formatted": previous_formatted
-  }, (response) => {
-    previous_formatted = response;
-    console.log("previous formatted", response);
-  });
+  if (info.menuItemId == "FormatSelected") {
+    ensureSendMessage(
+      tab.id,
+      {
+        previous_formatted: previous_formatted,
+        command: "format",
+      },
+      (response) => {
+        previous_formatted = response;
+        console.log("previous formatted", response);
+      }
+    );
+  } else if (info.menuItemId == "Diff") {
+    ensureSendMessage(
+      tab.id,
+      {
+        previous_formatted: previous_formatted,
+        command: "diff",
+      },
+      (response) => {}
+    );
+  }
 }
 
 chrome.contextMenus.onClicked.addListener(onClickHandler);
@@ -17,6 +33,12 @@ chrome.runtime.onInstalled.addListener(function () {
   chrome.contextMenus.create({
     id: "FormatSelected",
     title: "Format Selected",
+    contexts: ["selection"],
+  });
+
+  chrome.contextMenus.create({
+    id: "Diff",
+    title: "Diff",
     contexts: ["selection"],
   });
 });

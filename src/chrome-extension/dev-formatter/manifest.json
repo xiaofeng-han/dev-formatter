@@ -22,11 +22,14 @@
       "css": [
         "jquery/jquery-ui.css",
         "jquery/jquery-ui.theme.css",
-        "jquery/jquery-ui.structure.css"
+        "jquery/jquery-ui.structure.css",
+        "diff/diffview.css"
       ],
       "js": [
         "jquery/jquery.min.js",
         "jquery/jquery-ui.min.js",
+        "diff/difflib.js",
+        "diff/diffview.js",
         "foreground/formatter.js"
       ]
     }

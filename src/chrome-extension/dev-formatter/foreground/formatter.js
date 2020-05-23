@@ -8,6 +8,68 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     return;
   }
 
+  if (request.command == "format") {
+    doFormat(request, sendResponse);
+  } else if (request.command == "diff") {
+    doDiff(request, sendResponse);
+  }
+});
+const doDiff = (request, sendResponse) => {
+  var dialog = $(bubbleDOM);
+  dialog.dialog({
+    autoOpen: false,
+    closeText: "close",
+    width: "auto",
+    maxWidth: $(window).width() * 0.8,
+    maxHeight: $(window).height() * 0.8,
+    modal: true,
+  });
+  if (
+    typeof request.previous_formatted === undefined ||
+    request.previous_formatted === undefined
+  ) {
+    console.log("no previous formatted content");
+    dialog.html("No previous selected content");
+    dialog.dialog("open");
+    dialog.dialog("moveToTop");
+    sendResponse("NoPrevious");
+    return;
+  }
+  var baseText = difflib.stringAsLines(request.previous_formatted);
+  var selection = window.getSelection().toString();
+  console.log("selection for diff", selection);
+  var newText = difflib.stringAsLines(formatForClipboard(format(selection)));
+  var opCodes = new difflib.SequenceMatcher(baseText, newText).get_opcodes();
+  var view = diffview.buildView({
+    baseTextLines: baseText,
+    newTextLines: newText,
+    opcodes: opCodes,
+    // set the display titles for each resource
+    baseTextName: "Previous selected",
+    newTextName: "New selection",
+    contextSize: null,
+    viewType: 0,
+  });
+
+  dialog.html(view);
+  dialog.dialog({
+    buttons: [
+      {
+        text: "Copy & Close",
+        click: () => {
+          navigator.clipboard.writeText(formattedForClipboard);
+          dialog.dialog("close");
+        },
+      },
+    ],
+  });
+
+  dialog.dialog("open");
+  dialog.dialog("moveToTop");
+  sendResponse("done");
+};
+
+const doFormat = (request, sendResponse) => {
   if (
     typeof request.previous_formatted === undefined ||
     request.previous_formatted === undefined
@@ -25,7 +87,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   dialog.dialog({
     autoOpen: false,
     closeText: "close",
-    width: "80%",
+    width: "auto",
     maxWidth: $(window).width() * 0.8,
     maxHeight: $(window).height() * 0.8,
     modal: true,
@@ -42,8 +104,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   dialog.dialog("open");
   dialog.dialog("moveToTop");
   sendResponse(formattedForClipboard);
-  /* Content script action */
-});
+};
 
 var bubbleDOM = document.createElement("div");
 bubbleDOM.setAttribute("title", "Formatted");
@@ -79,7 +140,11 @@ const format = (selection) => {
   var level = 0;
 
   var result = [];
+  var ignoreFollowingSpace = true;
   arr.forEach((current, index, array) => {
+    if (ignoreFollowingSpace && current == " ") {
+      return;
+    }
     result.push(current);
     if (isOpening(current)) {
       changeLine(result, ++level);
