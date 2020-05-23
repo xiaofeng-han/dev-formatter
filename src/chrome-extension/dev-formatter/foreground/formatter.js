@@ -107,8 +107,11 @@ const doFormat = (request, sendResponse) => {
 };
 
 var bubbleDOM = document.createElement("div");
-bubbleDOM.setAttribute("title", "Formatted");
 document.body.appendChild(bubbleDOM);
+
+const setupDialogCommon = () => {
+  bubbleDOM.setAttribute("title", "Formatter");
+}
 
 const isOpening = (ch) => {
   var index = LEVEL_CHANGING_SYMBOLS.indexOf(ch);
