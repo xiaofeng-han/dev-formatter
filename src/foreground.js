@@ -29,10 +29,7 @@ const doDiff = (request, sendResponse) => {
     request.previous_formatted === undefined
   ) {
     console.log("no previous formatted content");
-    dialog.html("No previous selected content");
-    dialog.dialog("open");
-    dialog.dialog("moveToTop");
-    sendResponse("NoPrevious");
+    showMessage("No previous selected content");
     return;
   }
   var baseText = difflib.stringAsLines(request.previous_formatted);
@@ -51,21 +48,7 @@ const doDiff = (request, sendResponse) => {
     viewType: 0,
   });
 
-  dialog.html(view);
-  dialog.dialog({
-    buttons: [
-      {
-        text: "Copy & Close",
-        click: () => {
-          navigator.clipboard.writeText(formattedForClipboard);
-          dialog.dialog("close");
-        },
-      },
-    ],
-  });
-
-  dialog.dialog("open");
-  dialog.dialog("moveToTop");
+  showDialog(view, "Diff");
   sendResponse("done");
 };
 
@@ -80,10 +63,19 @@ const doFormat = (request, sendResponse) => {
   }
 
   var selection = window.getSelection().toString();
-  var dialog = $(bubbleDOM);
   var formatted = format(selection);
   var formattedForClipboard = formatForClipboard(formatted);
-  dialog.html(formatted);
+  showFormatted(formatted, () => {
+    navigator.clipboard.writeText(formattedForClipboard);
+  })
+  sendResponse(formattedForClipboard);
+};
+
+var bubbleDOM = document.createElement("div");
+var dialog = $(bubbleDOM);
+document.body.appendChild(bubbleDOM);
+
+const setupDialogCommon = () => {
   dialog.dialog({
     autoOpen: false,
     closeText: "close",
@@ -91,26 +83,39 @@ const doFormat = (request, sendResponse) => {
     maxWidth: $(window).width() * 0.8,
     maxHeight: $(window).height() * 0.8,
     modal: true,
+  })
+}
+
+const showMessage = (message) => {
+  showDialog(message);
+}
+
+const showFormatted = (formatted, onClose) => {
+  showDialog(formatted, "Formatted content", "Copy & Close", onClose);
+};
+
+const showDialog = (content, dialogTitle, buttonText, onClose) => {
+  setupDialogCommon();
+  if (content) {
+    dialog.html(content);
+  }
+
+  dialog.dialog({
+    title: dialogTitle ? dialogTitle : "Info",
     buttons: [
       {
-        text: "Copy & Close",
+        text: buttonText ? buttonText : "Close",
         click: () => {
-          navigator.clipboard.writeText(formattedForClipboard);
+          if (onClose) {
+            onClose();
+          }
           dialog.dialog("close");
-        },
-      },
-    ],
+        }
+      }
+    ]
   });
   dialog.dialog("open");
   dialog.dialog("moveToTop");
-  sendResponse(formattedForClipboard);
-};
-
-var bubbleDOM = document.createElement("div");
-document.body.appendChild(bubbleDOM);
-
-const setupDialogCommon = () => {
-  bubbleDOM.setAttribute("title", "Formatter");
 }
 
 const isOpening = (ch) => {

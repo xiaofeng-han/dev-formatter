@@ -12,25 +12,33 @@
     "clipboardWrite"
   ],
   "background": {
-    "scripts": ["jquery/jquery.min.js", "background/menu.js"],
+    "scripts": [
+      "jquery/jquery.min.js",
+      "background.js"
+    ],
     "persistent": false
   },
-  "web_accessible_resources": ["jquery/images/*"],
+  "web_accessible_resources": [
+    "jquery/images/*"
+  ],
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": [
+        "<all_urls>"
+      ],
       "css": [
         "jquery/jquery-ui.css",
         "jquery/jquery-ui.theme.css",
         "jquery/jquery-ui.structure.css",
-        "diff/diffview.css"
+        "diff/diffview.css",
+        "css/mydialog.css"
       ],
       "js": [
         "jquery/jquery.min.js",
         "jquery/jquery-ui.min.js",
         "diff/difflib.js",
         "diff/diffview.js",
-        "foreground/formatter.js"
+        "foreground.js"
       ]
     }
   ]
