@@ -67,7 +67,7 @@ const doFormat = (request, sendResponse) => {
   var formattedForClipboard = formatForClipboard(formatted);
   showFormatted(formatted, () => {
     navigator.clipboard.writeText(formattedForClipboard);
-  })
+  });
   sendResponse(formattedForClipboard);
 };
 
@@ -75,20 +75,26 @@ var bubbleDOM = document.createElement("div");
 var dialog = $(bubbleDOM);
 document.body.appendChild(bubbleDOM);
 
+var maxWidth = $(window).width() * 0.8;
+var maxHeight = $(window).height() * 0.8;
+
 const setupDialogCommon = () => {
   dialog.dialog({
     autoOpen: false,
     closeText: "close",
     width: "auto",
-    maxWidth: $(window).width() * 0.8,
-    maxHeight: $(window).height() * 0.8,
+    maxWidth: maxWidth,
+    maxHeight: maxHeight,
     modal: true,
-  })
-}
+  });
+  dialog.css({
+    "overflow-wrap": "break-word",
+  });
+};
 
 const showMessage = (message) => {
   showDialog(message);
-}
+};
 
 const showFormatted = (formatted, onClose) => {
   showDialog(formatted, "Formatted content", "Copy & Close", onClose);
@@ -110,13 +116,19 @@ const showDialog = (content, dialogTitle, buttonText, onClose) => {
             onClose();
           }
           dialog.dialog("close");
-        }
-      }
-    ]
+        },
+      },
+    ],
   });
+
+  // in case of long single word (like long id/hash), force the max width
+  var currentWidth = dialog.dialog("widget").width();
+  if (currentWidth > maxWidth) {
+    dialog.dialog("option", "width", maxWidth);
+  }
   dialog.dialog("open");
   dialog.dialog("moveToTop");
-}
+};
 
 const isOpening = (ch) => {
   var index = LEVEL_CHANGING_SYMBOLS.indexOf(ch);
