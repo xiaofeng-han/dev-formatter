@@ -2,6 +2,11 @@ const SPACE_CHARS = [" ", "\t"];
 const KEY_VALUE_DELIMITER = ["=", ":"];
 const LEVEL_CHANGING_SYMBOLS = [..."{}[]"];
 const COMMA = ",";
+const HTML_NEWLINE = "<br/>";
+const HTML_INDENT_UNIT = "&nbsp;";
+const NEWLINE = "\n";
+const INDENT_UNIT = " ";
+const UNIT_PER_INDENT = 4;
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   if (request.ping) {
     sendResponse({ pong: true });
@@ -15,27 +20,18 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   }
 });
 const doDiff = (request, sendResponse) => {
-  var dialog = $(bubbleDOM);
-  dialog.dialog({
-    autoOpen: false,
-    closeText: "close",
-    width: "auto",
-    maxWidth: $(window).width() * 0.8,
-    maxHeight: $(window).height() * 0.8,
-    modal: true,
-  });
   if (
-    typeof request.previous_formatted === undefined ||
-    request.previous_formatted === undefined
+    typeof request.formatted === undefined ||
+    request.formatted === undefined
   ) {
     console.log("no previous formatted content");
     showMessage("No previous selected content");
     return;
   }
-  var baseText = difflib.stringAsLines(request.previous_formatted);
+  var baseText = difflib.stringAsLines(request.formatted.clipboard);
   var selection = window.getSelection().toString();
   console.log("selection for diff", selection);
-  var newText = difflib.stringAsLines(formatForClipboard(format(selection)));
+  var newText = difflib.stringAsLines(format(selection, false, true).clipboard);
   var opCodes = new difflib.SequenceMatcher(baseText, newText).get_opcodes();
   var view = diffview.buildView({
     baseTextLines: baseText,
@@ -53,22 +49,12 @@ const doDiff = (request, sendResponse) => {
 };
 
 const doFormat = (request, sendResponse) => {
-  if (
-    typeof request.previous_formatted === undefined ||
-    request.previous_formatted === undefined
-  ) {
-    console.log("no previous formatted content");
-  } else {
-    console.log("previous formatted content", request.previous_formatted);
-  }
-
   var selection = window.getSelection().toString();
   var formatted = format(selection);
-  var formattedForClipboard = formatForClipboard(formatted);
   showFormatted(formatted, () => {
-    navigator.clipboard.writeText(formattedForClipboard);
+    navigator.clipboard.writeText(formatted.clipboard);
   });
-  sendResponse(formattedForClipboard);
+  sendResponse(formatted);
 };
 
 var bubbleDOM = document.createElement("div");
@@ -83,6 +69,7 @@ const setupDialogCommon = () => {
     autoOpen: false,
     closeText: "close",
     width: "auto",
+    height: maxHeight,
     maxWidth: maxWidth,
     maxHeight: maxHeight,
     modal: true,
@@ -97,7 +84,7 @@ const showMessage = (message) => {
 };
 
 const showFormatted = (formatted, onClose) => {
-  showDialog(formatted, "Formatted content", "Copy & Close", onClose);
+  showDialog(formatted.html, "Formatted content", "Copy & Close", onClose);
 };
 
 const showDialog = (content, dialogTitle, buttonText, onClose) => {
@@ -123,9 +110,15 @@ const showDialog = (content, dialogTitle, buttonText, onClose) => {
 
   // in case of long single word (like long id/hash), force the max width
   var currentWidth = dialog.dialog("widget").width();
+  var currentHeight = dialog.dialog("widget").height();
   if (currentWidth > maxWidth) {
     dialog.dialog("option", "width", maxWidth);
   }
+
+  if (currentHeight > maxHeight) {
+    dialog.dialog("option", "height", maxHeight);
+  }
+
   dialog.dialog("open");
   dialog.dialog("moveToTop");
 };
@@ -148,38 +141,80 @@ const isClosing = (ch) => {
   return index % 2 != 0;
 };
 
-const changeLine = (arr, level) => {
-  arr.push("<br/>");
-  for (var i = 0; i < level; i++) {
-    arr.push("&nbsp;&nbsp;&nbsp;&nbsp;");
+const getChangeLineContent = (level, isHTML) => {
+  var localNewline = isHTML ? HTML_NEWLINE : NEWLINE;
+  var localUnitPerIndent = isHTML ? HTML_INDENT_UNIT : INDENT_UNIT;
+
+  return (
+    localNewline + localUnitPerIndent.repeat(UNIT_PER_INDENT).repeat(level)
+  );
+};
+
+const addToResult = (result, content, forHTML, forClipboard) => {
+  if (forHTML) {
+    result.html.push(content);
+  }
+
+  if (forClipboard) {
+    result.clipboard.push(content);
   }
 };
 
-const format = (selection) => {
+const popFromResult = (result, forHTML, forClipboard) => {
+  if (forHTML) {
+    result.html.pop();
+  }
+
+  if (forClipboard) {
+    result.clipboard.pop();
+  }
+};
+
+const changeLine = (result, level, forHTML, forClipboard) => {
+  if (forHTML) {
+    addToResult(result, getChangeLineContent(level, true), true, false);
+  }
+
+  if (forClipboard) {
+    addToResult(result, getChangeLineContent(level, false), false, true);
+  }
+};
+const format = (selection, forHTML = true, forClipboard = true) => {
   const arr = [...selection];
   var level = 0;
 
-  var result = [];
+  var result = {
+    html: [],
+    clipboard: [],
+  };
   var ignoreFollowingSpace = true;
   arr.forEach((current, index, array) => {
-    if (ignoreFollowingSpace && current == " ") {
-      return;
+    if (SPACE_CHARS.indexOf(current) >= 0) {
+      if (ignoreFollowingSpace) {
+        return;
+      }
+    } else {
+      ignoreFollowingSpace = false;
     }
-    result.push(current);
+    addToResult(result, current, forHTML, forClipboard);
     if (isOpening(current)) {
-      changeLine(result, ++level);
+      changeLine(result, ++level, forHTML, forClipboard);
     }
     if (isClosing(current)) {
-      result.pop();
-      changeLine(result, --level);
-      result.push(current);
+      popFromResult(result, forHTML, forClipboard);
+      changeLine(result, --level, forHTML, forClipboard);
+      addToResult(result, current, forHTML, forClipboard);
     }
 
-    if (current == ",") {
-      changeLine(result, level);
+    if (current == COMMA) {
+      changeLine(result, level, forHTML, forClipboard);
+      ignoreFollowingSpace = true;
     }
   });
-  return result.join("");
+  return {
+    html: forHTML ? result.html.join("") : undefined,
+    clipboard: forClipboard ? result.clipboard.join("") : undefined,
+  };
 };
 
 const formatForClipboard = (formatted) => {
