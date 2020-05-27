@@ -13,9 +13,9 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     return;
   }
 
-  if (request.command == "format") {
+  if (request.command == COMMANDS.FORMAT) {
     doFormat(request, sendResponse);
-  } else if (request.command == "diff") {
+  } else if (request.command == COMMANDS.DIFF) {
     doDiff(request, sendResponse);
   }
 });
