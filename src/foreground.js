@@ -7,7 +7,7 @@ const HTML_INDENT_UNIT = "&nbsp;";
 const NEWLINE = "\n";
 const INDENT_UNIT = " ";
 const UNIT_PER_INDENT = 4;
-chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.ping) {
     sendResponse({ pong: true });
     return;
@@ -19,6 +19,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     doDiff(request, sendResponse);
   }
 });
+
 const doDiff = (request, sendResponse) => {
   if (
     typeof request.formatted === undefined ||
