@@ -14,7 +14,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.command == COMMANDS.FORMAT) {
-    doFormat(request, sendResponse);
+    doFormat();
   } else if (request.command == COMMANDS.DIFF) {
     doDiff(request, sendResponse);
   } else if (request.command == COMMANDS.SELECT) {
@@ -59,7 +59,7 @@ const doDiff = (request, sendResponse) => {
   sendResponse("done");
 };
 
-const doFormat = (request, sendResponse) => {
+const doFormat = () => {
   var selection = window.getSelection().toString();
   var formatted = format(selection);
   showFormatted(formatted, () => {
