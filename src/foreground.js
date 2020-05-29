@@ -17,8 +17,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     doFormat(request, sendResponse);
   } else if (request.command == COMMANDS.DIFF) {
     doDiff(request, sendResponse);
+  } else if (request.command == COMMANDS.SELECT) {
+    doSelect(sendResponse);
   }
 });
+
+const doSelect = (sendResponse) => {
+  var selection = window.getSelection().toString();
+  sendResponse({
+    command: COMMANDS.SELECT,
+    formatted: format(selection),
+  });
+};
 
 const doDiff = (request, sendResponse) => {
   if (
@@ -55,7 +65,6 @@ const doFormat = (request, sendResponse) => {
   showFormatted(formatted, () => {
     navigator.clipboard.writeText(formatted.clipboard);
   });
-  sendResponse(formatted);
 };
 
 var bubbleDOM = document.createElement("div");
@@ -85,28 +94,52 @@ const showMessage = (message) => {
 };
 
 const showFormatted = (formatted, onClose) => {
-  showDialog(formatted.html, "Formatted content", "Copy & Close", onClose);
+  showDialogWithButtons(formatted.html, "Formatted content", [
+    {
+      text: "Copy & Close",
+      click: () => {
+        onClose();
+        dialog.dialog("close");
+      },
+    },
+    {
+      text: "Select For Diff & Close",
+      click: () => {
+        chrome.runtime.sendMessage({
+          command: COMMANDS.SELECT,
+          formatted,
+        });
+        onClose();
+        dialog.dialog("close");
+      },
+    },
+  ]);
 };
 
 const showDialog = (content, dialogTitle, buttonText, onClose) => {
+  var buttons = [
+    {
+      text: buttonText ? buttonText : "Close",
+      click: () => {
+        if (onClose) {
+          onClose();
+        }
+        dialog.dialog("close");
+      },
+    },
+  ];
+  showDialogWithButtons(content, dialogTitle, buttons);
+};
+
+const showDialogWithButtons = (content, dialogTitle, buttons) => {
   setupDialogCommon();
   if (content) {
     dialog.html(content);
   }
 
   dialog.dialog({
+    buttons,
     title: dialogTitle ? dialogTitle : "Info",
-    buttons: [
-      {
-        text: buttonText ? buttonText : "Close",
-        click: () => {
-          if (onClose) {
-            onClose();
-          }
-          dialog.dialog("close");
-        },
-      },
-    ],
   });
 
   // in case of long single word (like long id/hash), force the max width

@@ -1,4 +1,5 @@
 const COMMANDS = {
   FORMAT: "FORMAT",
   DIFF: "DIFF",
+  SELECT: "SELECT",
 };

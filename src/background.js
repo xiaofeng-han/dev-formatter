@@ -2,6 +2,7 @@ var formatted;
 const MENU_IDS = {
   FORMAT: "Format",
   DIFF: "Diff",
+  SELECT: "Select",
 };
 const onClickHandler = (info, tab) => {
   // console.log("item " + info.menuItemId + " was clicked");
@@ -14,10 +15,7 @@ const onClickHandler = (info, tab) => {
         formatted,
         command: COMMANDS.FORMAT,
       },
-      (response) => {
-        formatted = response;
-        console.log("previous formatted", response);
-      }
+      (response) => {}
     );
   } else if (info.menuItemId == MENU_IDS.DIFF) {
     ensureSendMessage(
@@ -27,6 +25,19 @@ const onClickHandler = (info, tab) => {
         command: COMMANDS.DIFF,
       },
       (response) => {}
+    );
+  } else if (info.menuItemId == MENU_IDS.SELECT) {
+    ensureSendMessage(
+      tab.id,
+      {
+        formatted,
+        command: COMMANDS.SELECT,
+      },
+      (response) => {
+        if (response) {
+          onSelect(response);
+        }
+      }
     );
   }
 };
@@ -42,10 +53,34 @@ chrome.runtime.onInstalled.addListener(() => {
 
   chrome.contextMenus.create({
     id: MENU_IDS.DIFF,
-    title: getDiffMenuTitle(),
+    visible: false,
+    title: "Diff with selected",
+    contexts: ["selection"],
+  });
+
+  chrome.contextMenus.create({
+    id: MENU_IDS.SELECT,
+    title: "Select for Diff",
     contexts: ["selection"],
   });
 });
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.command == COMMANDS.SELECT) {
+    onSelect(request);
+    if (sendResponse) {
+      sendResponse();
+    }
+  }
+});
+
+const onSelect = (request) => {
+  formatted = request.formatted;
+  chrome.contextMenus.update(MENU_IDS.DIFF, {
+    visible: true,
+  });
+  console.log("Selected", request);
+};
 
 // this is not working, update to solution at: https://stackoverflow.com/questions/13202896/dynamic-extension-context-menu-that-depends-on-selected-text
 const getDiffMenuTitle = () => {
