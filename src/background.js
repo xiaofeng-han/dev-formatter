@@ -75,11 +75,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 const onSelect = (request) => {
-  formatted = request.formatted;
-  chrome.contextMenus.update(MENU_IDS.DIFF, {
-    visible: true,
+  chrome.storage.local.get(["formatted"], (result) => {
+    console.log("Background read saved formatted", result);
+    formatted = request.formatted;
+    chrome.contextMenus.update(MENU_IDS.DIFF, {
+      visible: true,
+    });
+    console.log("Selected", request);
   });
-  console.log("Selected", request);
 };
 
 // this is not working, update to solution at: https://stackoverflow.com/questions/13202896/dynamic-extension-context-menu-that-depends-on-selected-text

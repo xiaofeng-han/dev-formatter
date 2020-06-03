@@ -24,9 +24,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 const doSelect = (sendResponse) => {
   var selection = window.getSelection().toString();
+  var formatted = format(selection);
+  chrome.storage.local.set(
+    {
+      formatted,
+    },
+    () => {
+      console.log("formatted saved to local storage");
+    }
+  );
   sendResponse({
     command: COMMANDS.SELECT,
-    formatted: format(selection),
+    formatted,
   });
 };
 
