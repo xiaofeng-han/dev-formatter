@@ -16,56 +16,80 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.command == COMMANDS.FORMAT) {
     doFormat();
   } else if (request.command == COMMANDS.DIFF) {
-    doDiff(request, sendResponse);
+    doDiff();
   } else if (request.command == COMMANDS.SELECT) {
-    doSelect(sendResponse);
+    doSelect();
+  } else if (request.command == COMMANDS.CLEAR) {
+    doClear();
   }
 });
 
-const doSelect = (sendResponse) => {
-  var selection = window.getSelection().toString();
-  var formatted = format(selection);
-  chrome.storage.local.set(
-    {
-      formatted,
-    },
-    () => {
-      console.log("formatted saved to local storage");
+const setStorage = (content, callback) => {
+  if (!content) {
+    chrome.storage.local.remove(STORAGE_KEY);
+    return;
+  }
+  var storage = {};
+  storage[STORAGE_KEY] = content;
+  chrome.storage.local.set(storage, () => {
+    if (callback) {
+      callback();
     }
-  );
-  sendResponse({
-    command: COMMANDS.SELECT,
-    formatted,
   });
 };
 
-const doDiff = (request, sendResponse) => {
-  if (
-    typeof request.formatted === undefined ||
-    request.formatted === undefined
-  ) {
-    console.log("no previous formatted content");
-    showMessage("No previous selected content");
-    return;
-  }
-  var baseText = difflib.stringAsLines(request.formatted.clipboard);
-  var selection = window.getSelection().toString();
-  console.log("selection for diff", selection);
-  var newText = difflib.stringAsLines(format(selection, false, true).clipboard);
-  var opCodes = new difflib.SequenceMatcher(baseText, newText).get_opcodes();
-  var view = diffview.buildView({
-    baseTextLines: baseText,
-    newTextLines: newText,
-    opcodes: opCodes,
-    // set the display titles for each resource
-    baseTextName: "Previous selected",
-    newTextName: "New selection",
-    contextSize: null,
-    viewType: 0,
+const getStorage = (callback) => {
+  chrome.storage.local.get([STORAGE_KEY], (result) => {
+    if (callback && result) {
+      callback(result[STORAGE_KEY]);
+    }
   });
+};
 
-  showDialog(view, "Diff");
-  sendResponse("done");
+const doSelect = () => {
+  var selection = window.getSelection().toString();
+  var formatted = format(selection);
+  setStorage(formatted, () => {
+    chrome.runtime.sendMessage({
+      command: COMMANDS.SELECT,
+    });
+  });
+};
+
+const doDiff = () => {
+  getStorage((formatted) => {
+    if (typeof formatted === undefined || formatted === undefined) {
+      console.log("no previous formatted content");
+      showMessage("No previous selected content");
+      return;
+    }
+
+    var baseText = difflib.stringAsLines(formatted.clipboard);
+    var selection = window.getSelection().toString();
+    var newText = difflib.stringAsLines(
+      format(selection, false, true).clipboard
+    );
+    var opCodes = new difflib.SequenceMatcher(baseText, newText).get_opcodes();
+    var view = diffview.buildView({
+      baseTextLines: baseText,
+      newTextLines: newText,
+      opcodes: opCodes,
+      // set the display titles for each resource
+      baseTextName: "Previous selected",
+      newTextName: "New selection",
+      contextSize: null,
+      viewType: 0,
+    });
+
+    showDialog(view, "Diff");
+  });
+};
+
+const doClear = () => {
+  setStorage(undefined);
+  chrome.runtime.sendMessage({
+    command: COMMANDS.CLEAR,
+  });
 };
 
 const doFormat = () => {
@@ -114,12 +138,17 @@ const showFormatted = (formatted, onClose) => {
     {
       text: "Select For Diff & Close",
       click: () => {
-        chrome.runtime.sendMessage({
-          command: COMMANDS.SELECT,
-          formatted,
+        setStorage(formatted, () => {
+          chrome.runtime.sendMessage(
+            {
+              command: COMMANDS.SELECT,
+            },
+            () => {
+              onClose();
+              dialog.dialog("close");
+            }
+          );
         });
-        onClose();
-        dialog.dialog("close");
       },
     },
   ]);
@@ -162,6 +191,11 @@ const showDialogWithButtons = (content, dialogTitle, buttons) => {
     dialog.dialog("option", "height", maxHeight);
   }
 
+  dialog.dialog({
+    open: (event, ui) => {
+      dialog.scrollTop(0);
+    },
+  });
   dialog.dialog("open");
   dialog.dialog("moveToTop");
 };

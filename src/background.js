@@ -1,44 +1,29 @@
-var formatted;
 const MENU_IDS = {
   FORMAT: "Format",
   DIFF: "Diff",
   SELECT: "Select",
+  CLEAR: "Clear",
 };
 const onClickHandler = (info, tab) => {
   // console.log("item " + info.menuItemId + " was clicked");
   // console.log("info: " + JSON.stringify(info));
   // console.log("tab: " + JSON.stringify(tab));
   if (info.menuItemId == MENU_IDS.FORMAT) {
-    ensureSendMessage(
-      tab.id,
-      {
-        formatted,
-        command: COMMANDS.FORMAT,
-      },
-      (response) => {}
-    );
+    ensureSendMessage(tab.id, {
+      command: COMMANDS.FORMAT,
+    });
   } else if (info.menuItemId == MENU_IDS.DIFF) {
-    ensureSendMessage(
-      tab.id,
-      {
-        formatted,
-        command: COMMANDS.DIFF,
-      },
-      (response) => {}
-    );
+    ensureSendMessage(tab.id, {
+      command: COMMANDS.DIFF,
+    });
   } else if (info.menuItemId == MENU_IDS.SELECT) {
-    ensureSendMessage(
-      tab.id,
-      {
-        formatted,
-        command: COMMANDS.SELECT,
-      },
-      (response) => {
-        if (response) {
-          onSelect(response);
-        }
-      }
-    );
+    ensureSendMessage(tab.id, {
+      command: COMMANDS.SELECT,
+    });
+  } else if (info.menuItemId == MENU_IDS.CLEAR) {
+    chrome.storage.local.remove(STORAGE_KEY, () => {
+      updateMenuBySelection();
+    });
   }
 };
 
@@ -52,6 +37,11 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 
   chrome.contextMenus.create({
+    id: MENU_IDS.SELECT,
+    title: "Select for Diff",
+    contexts: ["selection"],
+  });
+  chrome.contextMenus.create({
     id: MENU_IDS.DIFF,
     visible: false,
     title: "Diff with selected",
@@ -59,39 +49,45 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 
   chrome.contextMenus.create({
-    id: MENU_IDS.SELECT,
-    title: "Select for Diff",
+    id: MENU_IDS.CLEAR,
+    visible: false,
+    title: "Clear selection",
     contexts: ["selection"],
   });
+
+  updateMenuBySelection();
 });
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.command == COMMANDS.SELECT) {
-    onSelect(request);
-    if (sendResponse) {
-      sendResponse();
+const updateMenuBySelection = () => {
+  chrome.storage.local.get([STORAGE_KEY], (result) => {
+    var visible = false;
+    if (result[STORAGE_KEY]) {
+      visible = true;
     }
-  }
-});
 
-const onSelect = (request) => {
-  chrome.storage.local.get(["formatted"], (result) => {
-    console.log("Background read saved formatted", result);
-    formatted = request.formatted;
     chrome.contextMenus.update(MENU_IDS.DIFF, {
-      visible: true,
+      visible,
     });
-    console.log("Selected", request);
+
+    chrome.contextMenus.update(MENU_IDS.CLEAR, {
+      visible,
+    });
   });
 };
 
-// this is not working, update to solution at: https://stackoverflow.com/questions/13202896/dynamic-extension-context-menu-that-depends-on-selected-text
-const getDiffMenuTitle = () => {
-  if (typeof formatted === undefined || formatted === undefined) {
-    return "Select for diff";
-  } else {
-    return "Diff with selected";
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  const { command } = request;
+  if (command == COMMANDS.SELECT) {
+    onSelect();
   }
+});
+
+const onSelect = () => {
+  updateMenuBySelection();
+};
+
+const onClear = () => {
+  updateMenuBySelection();
 };
 
 const ensureSendMessage = (tabId, message, callback) => {

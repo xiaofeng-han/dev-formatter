@@ -3,3 +3,5 @@ const COMMANDS = {
   DIFF: "DIFF",
   SELECT: "SELECT",
 };
+
+const STORAGE_KEY = "formatter";
